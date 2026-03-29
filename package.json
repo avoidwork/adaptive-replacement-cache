@@ -1,7 +1,7 @@
 {
   "name": "tiny-arc",
   "version": "1.0.0",
-  "description": "",
+  "description": "A lightweight ARC cache implementation for Node.js and browsers.",
   "main": "index.js",
   "scripts": {
     "build": "npm run rollup",
@@ -10,11 +10,12 @@
     "fix": "oxlint --fix *.js benchmarks src tests && oxfmt *.js benchmarks src tests/unit --write",
     "lint": "oxlint *.js benchmarks src tests && oxfmt *.js benchmarks src tests/unit --check",
     "prepare": "husky",
-    "test": "echo \"Error: no test specified\" && exit 1"
+"rollup": "rollup --config",
+    "test": "npm run lint && node --test tests/**/*.test.js"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "BSD-3-Clause",
   "type": "module",
   "main": "dist/tiny-arc.cjs",
   "types": "types/arc.d.ts",
