@@ -4,6 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "build": "npm run rollup",
+    "changelog": "auto-changelog -p",
     "coverage": "node --test --experimental-test-coverage --test-coverage-exclude=dist/** --test-coverage-exclude=tests/** --test-reporter=spec tests/**/*.test.js 2>&1 | grep -A 1000 \"start of coverage report\" > coverage.txt && ! grep -q \"failing tests\" coverage.txt",
     "fix": "oxlint --fix *.js benchmarks src tests && oxfmt *.js benchmarks src tests/unit --write",
     "lint": "oxlint *.js benchmarks src tests && oxfmt *.js benchmarks src tests/unit --check",
@@ -13,7 +15,19 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
+  "main": "dist/tiny-arc.cjs",
+  "types": "types/arc.d.ts",
+  "files": [
+    "dist",
+    "tpl",
+    "types"
+  ],
+  "exports": {
+    "types": "./types/tiny-arc.d.ts",
+    "import": "./dist/tiny-arc.js",
+    "require": "./dist/tiny-arc.cjs"
+  },
   "devDependencies": {
     "auto-changelog": "^2.5.0",
     "husky": "^9.1.7",
