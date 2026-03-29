@@ -55,90 +55,90 @@ The ARC implementation maintains 5 maps:
 
 ## Data Flow
 
-### Retrieval Flow (get)
+### Retrieval Flow get
 
 ```mermaid
 sequenceDiagram
     participant Client
-    participant Cache as ARC.get()
+    participant Cache as get
 
-    Client->>Cache: get(key)
-    Cache->>Cache: Check cache.has(key)?
+    Client->>Cache: get key
+    Cache->>Cache: Check cache.has key
     alt Not Found
         Cache-->>Client: undefined
     else Found
-        Cache->>Cache: Check which list contains key
+        Cache->>Cache: Check which list
         alt In p1
-            Cache->>Cache: Move key to p2
-            Cache->>Cache: Call adjust()
-        alt In p2
+            Cache->>Cache: Move to p2
+            Cache->>Cache: Call adjust
+        else In p2
             Cache->>Cache: Keep in p2
-        alt In t1
+        else In t1
             Cache->>Cache: Move to t2
-            Cache->>Cache: Call adjust()
-        alt In t2
+            Cache->>Cache: Call adjust
+        else In t2
             Cache->>Cache: Keep in t2
         end
         Cache-->>Client: Return value
     end
 ```
 
-### Insertion Flow (set)
+### Insertion Flow set
 
 ```mermaid
 sequenceDiagram
     participant Client
-    participant Cache as ARC.set()
+    participant Cache as set
 
-    Client->>Cache: set(key, value)
-    Cache->>Cache: Check cache.has(key)?
+    Client->>Cache: set key value
+    Cache->>Cache: Check cache.has key
     alt Key Exists
         Cache->>Cache: Update value
-        Cache->>Cache: Call get(key) to update position
+        Cache->>Cache: Call get to update position
         Cache-->>Client: Done
     else Key New
-        Cache->>Cache: Check cache.size >= maxSize?
+        Cache->>Cache: Check cache.size >= maxSize
         loop While over capacity
-            Cache->>Cache: Find oldest key (p1→t1→p2→t2)
+            Cache->>Cache: Find oldest key
             Cache->>Cache: Remove from all lists
             Cache->>Cache: Delete from cache
         end
         Cache->>Cache: Add to cache
         Cache->>Cache: Add to p1
-        Cache->>Cache: Call adjust()
+        Cache->>Cache: Call adjust
         Cache-->>Client: Done
     end
 ```
 
-## The adjust() Method
+## The adjust Method
 
-The `adjust()` method maintains balance between the four tracking lists based on access patterns.
+The adjust method maintains balance between the four tracking lists based on access patterns.
 
 ### Algorithm
 
 1. Calculate `delta = max(p1.size - p2.size, 0) / 2`
-2. Calculate `targetP1Size = floor((maxSize - delta) / 2)`
-3. Move excess from p1 to t1 until p1 ≤ targetP1Size
-4. Calculate `targetP2Size = maxSize - targetP1Size`
-5. Move excess from p2 to t2 until p2 ≤ targetP2Size
+2. Calculate targetP1Size floor max maxSize delta div 2
+3. Move excess from p1 to t1 until p1 <= targetP1Size
+4. Calculate targetP2Size = maxSize - targetP1Size
+5. Move excess from p2 to t2 until p2 <= targetP2Size
 
 ### Visual Representation
 
 ```mermaid
 flowchart TD
-    A[adjust() called] --> B[Calculate delta]
+    A[adjust called] --> B[Calculate delta]
     B --> C[Calculate targetP1Size]
     C --> D[Move from p1 to t1]
     D --> E[Calculate targetP2Size]
     E --> F[Move from p2 to t2]
     F --> G[Balance achieved]
 
-    subgraph Lists [Cache Structure]
-        P1[p1: transient recently accessed]
-        P2[p2: stable frequently accessed]
-        T1[t1: recently evicted]
-        T2[t2: frequently evicted]
-        C[cache: all entries]
+    subgraph Lists
+        P1[p1 transient recently accessed]
+        P2[p2 stable frequently accessed]
+        T1[t1 recently evicted]
+        T2[t2 frequently evicted]
+        C[cache all entries]
         
         P1 --> C
         P2 --> C
@@ -152,12 +152,12 @@ flowchart TD
 When the cache is at capacity and a new item is inserted:
 
 1. **Loop while `cache.size >= maxSize`**:
-   - Try to evict from `p1` first (FIFO)
-   - Then from `t1`
-   - Then from `p2`
-   - Then from `t2`
-2. **Remove from all four lists** (ensures complete cleanup)
-3. **Remove from main cache**
+    - Try to evict from p1 first FIFO
+    - Then from t1
+    - Then from p2
+    - Then from t2
+2. Remove from all four lists ensures complete cleanup
+3. Remove from main cache
 
 This ensures that:
 - Transient items are evicted first
@@ -168,31 +168,31 @@ This ensures that:
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Transient: set()
-    Transient --> Stable: get()
-    Stable --> Transient: adjust()
+    [*] --> Transient: set
+    Transient --> Stable: get
+    Stable --> Transient: adjust
     Transient --> Evicted: eviction
     Stable --> Evicted: eviction
-    Evicted --> Stable: adjust()
+    Evicted --> Stable: adjust
 ```
 
 ### State Transition Table
 
 | Current State | Action | New State |
 |---------------|--------|-----------|
-| Not in cache | set() | p1 (transient) |
-| p1 (transient) | get() | p2 (stable) |
-| p2 (stable) | get() | p2 (stable, moves to end) |
-| t1 (evicted) | get() | t2 (evicted, stable) |
-| t2 (evicted) | get() | t2 (evicted, stable, moves to end) |
-| Any | adjust() | Balance lists based on access patterns |
+| Not in cache | set | p1 transient |
+| p1 transient | get | p2 stable |
+| p2 stable | get | p2 stable moves to end |
+| t1 evicted | get | t2 evicted stable |
+| t2 evicted | get | t2 evicted stable moves to end |
+| Any | adjust | Balance lists based on access patterns |
 | Any | eviction | Removed from all lists and cache |
 
 ## Memory Management
 
 ### Cleanup on Delete
 
-When `delete(key)` is called:
+When delete key is called:
 
 ```javascript
 this.cache.delete(key);
@@ -206,7 +206,7 @@ All references are removed to prevent memory leaks and stale data.
 
 ### Clear Operation
 
-When `clear()` is called, all maps are cleared simultaneously:
+When clear is called all maps are cleared simultaneously:
 
 ```javascript
 this.cache.clear();
@@ -220,16 +220,16 @@ this.t2.clear();
 
 | Operation | Time Complexity | Notes |
 |-----------|-----------------|-------|
-| get() | O(1) | Map lookups are constant time |
-| set() | O(n) | May evict n items before insertion |
-| delete() | O(1) | Direct Map deletions |
-| has() | O(1) | Map lookup |
-| clear() | O(1) | Map.clear() |
-| adjust() | O(n) | May move n items between lists |
+| get | O1 | Map lookups are constant time |
+| set | On | May evict n items before insertion |
+| delete | O1 | Direct Map deletions |
+| has | O1 | Map lookup |
+| clear | O1 | Map.clear |
+| adjust | On | May move n items between lists |
 
 ## Factory Function
 
-The `arc()` factory provides a convenient way to create cache instances:
+The arc factory provides a convenient way to create cache instances:
 
 ```javascript
 export function arc(options = {}) {
@@ -254,14 +254,14 @@ The p1/p2 and t1/t2 split allows ARC to adaptively determine whether to favor re
 ### Why Evict All Lists?
 
 When evicting, all four lists are checked because:
-1. The `adjust()` method may move items between lists
+1. The adjust method may move items between lists
 2. A key might be in any list depending on access pattern
 3. Complete cleanup prevents memory leaks and stale references
 
 ### Why Use Transient and Stable Lists?
 
 This design allows the cache to:
-- Quickly identify recently accessed items (p1, t1)
-- Identify frequently accessed items (p2, t2)
+- Quickly identify recently accessed items p1 and t1
+- Identify frequently accessed items p2 and t2
 - Make intelligent eviction decisions based on patterns
-- Maintain a hybrid of LRU (recency) and LFU (frequency) behavior
+- Maintain a hybrid of LRU recency and LFU frequency behavior
