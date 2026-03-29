@@ -10,8 +10,8 @@
     "fix": "oxlint --fix *.js benchmarks src tests && oxfmt *.js benchmarks src tests/unit --write",
     "lint": "oxlint *.js benchmarks src tests && oxfmt *.js benchmarks src tests/unit --check",
     "prepare": "husky",
-"rollup": "rollup --config",
-    "test": "npm run lint && node --test tests/**/*.test.js"
+    "rollup": "rollup --config",
+    "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
