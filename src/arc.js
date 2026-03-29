@@ -32,26 +32,9 @@ export class ARC {
 		if (this.t1.has(key)) {
 			this.t1.delete(key);
 			this.t2.set(key, true);
-			this.#adaptB1();
 		} else if (this.t2.has(key)) {
 			this.t2.delete(key);
 			this.t2.set(key, true);
-		} else if (this.b1.has(key)) {
-			this.b1.delete(key);
-			if (this.b2.size > 0) {
-				this.#p = Math.min(this.#size, this.#p + Math.floor(this.b2.size / this.b1.size));
-			}
-			this.#evictT1();
-			this.t1.set(key, true);
-			this.adjust();
-		} else if (this.b2.has(key)) {
-			this.b2.delete(key);
-			if (this.b1.size > 0) {
-				this.#p = Math.max(0, this.#p - Math.floor(this.b1.size / this.b2.size));
-			}
-			this.#evictT2();
-			this.t1.set(key, true);
-			this.adjust();
 		}
 
 		return this.cache.get(key);
@@ -77,13 +60,10 @@ export class ARC {
 			if (this.b2.size > 0) {
 				this.#p = Math.min(this.#size, this.#p + Math.floor(this.b2.size / this.b1.size));
 			}
-			const delKey = this.t1.keys().next().value ?? this.t2.keys().next().value;
+			const delKey = this.t2.keys().next().value;
 			if (delKey !== undefined) {
-				this.t1.delete(delKey);
 				this.t2.delete(delKey);
-				this.cache.delete(delKey);
-				this.b1.delete(delKey);
-				this.b2.delete(delKey);
+				this.b2.set(delKey, true);
 			}
 			this.t1.set(key, true);
 			this.cache.set(key, value);
@@ -94,13 +74,10 @@ export class ARC {
 			if (this.b1.size > 0) {
 				this.#p = Math.max(0, this.#p - Math.floor(this.b1.size / this.b2.size));
 			}
-			const delKey = this.t2.keys().next().value ?? this.t1.keys().next().value;
+			const delKey = this.t1.keys().next().value;
 			if (delKey !== undefined) {
 				this.t1.delete(delKey);
-				this.t2.delete(delKey);
-				this.cache.delete(delKey);
-				this.b1.delete(delKey);
-				this.b2.delete(delKey);
+				this.b1.set(delKey, true);
 			}
 			this.t1.set(key, true);
 			this.cache.set(key, value);
@@ -253,28 +230,6 @@ export class ARC {
 
 		while (this.t2.size > this.#size - this.#p) {
 			const key = this.t2.keys().next().value;
-			this.t2.delete(key);
-			this.b2.set(key, true);
-		}
-	}
-
-	#adaptB1() {
-		if (this.b1.size > 0) {
-			this.#p = Math.min(this.#size, this.#p + Math.floor(this.b2.size / this.b1.size));
-		}
-	}
-
-	#evictT1() {
-		const key = this.t1.keys().next().value;
-		if (key !== undefined) {
-			this.t1.delete(key);
-			this.b1.set(key, true);
-		}
-	}
-
-	#evictT2() {
-		const key = this.t2.keys().next().value;
-		if (key !== undefined) {
 			this.t2.delete(key);
 			this.b2.set(key, true);
 		}
