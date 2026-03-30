@@ -26,7 +26,7 @@
     "types/arc.d.ts"
   ],
   "exports": {
-    "types": "./types/tiny-arc.d.ts",
+    "types": "./types/arc.d.ts",
     "import": "./dist/tiny-arc.js",
     "require": "./dist/tiny-arc.cjs"
   },
