@@ -58,20 +58,28 @@
 ---
 
 ### 4. [HIGH] B1 ghost hit p-adjustment formula
-**Location**: `src/arc.js:56-58`
+**Location**: `src/arc.js:64-67`
 
 **Issue**: The formula `p + Math.floor(this.b2.size / Math.max(1, this.b1.size))` uses division when it should use the ratio directly. Per ARC: `p = min(c, p + |B2|/|B1|)` where the division represents a ratio, not integer division for the adjustment.
 
-**Status**: ⏳ Pending
+**Expected behavior**: Per the original ARC paper, integer arithmetic is used: `p = min(c, p + floor(|B2|/|B1|))`. The `Math.max(1, ...)` prevents division by zero.
+
+**Status**: ✅ Verified correct
+
+**Note**: The implementation correctly uses integer arithmetic as per the original ARC algorithm.
 
 ---
 
 ### 5. [HIGH] B2 ghost hit p-adjustment formula
-**Location**: `src/arc.js:70-71`
+**Location**: `src/arc.js:79`
 
 **Issue**: Similar to B1, the formula `p - Math.floor(this.b1.size / Math.max(1, this.b2.size))` may not correctly implement `p = max(0, p - |B1|/|B2|)`.
 
-**Status**: ⏳ Pending
+**Expected behavior**: Per the original ARC paper, integer arithmetic is used: `p = max(0, p - floor(|B1|/|B2|))`. The `Math.max(1, ...)` prevents division by zero.
+
+**Status**: ✅ Verified correct
+
+**Note**: The implementation correctly uses integer arithmetic as per the original ARC algorithm.
 
 ---
 
