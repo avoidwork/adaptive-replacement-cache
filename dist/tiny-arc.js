@@ -121,7 +121,12 @@ class ARC {
 	 * @param {string|number} key - The key to delete
 	 */
 	delete(key) {
-		if (!this.cache.has(key)) {
+		if (this.cache.has(key)) {
+			this.cache.delete(key);
+			this.t1.delete(key);
+			this.t2.delete(key);
+			this.b1.delete(key);
+			this.b2.delete(key);
 			return;
 		}
 
@@ -132,6 +137,7 @@ class ARC {
 				this.t2.delete(delKey);
 				this.b2.set(delKey, true);
 			}
+			this.b1.delete(key);
 		} else if (this.b2.has(key)) {
 			this.#p = Math.min(
 				this.#size,
@@ -142,13 +148,8 @@ class ARC {
 				this.t1.delete(delKey);
 				this.b1.set(delKey, true);
 			}
+			this.b2.delete(key);
 		}
-
-		this.cache.delete(key);
-		this.t1.delete(key);
-		this.t2.delete(key);
-		this.b1.delete(key);
-		this.b2.delete(key);
 	}
 
 	/**
