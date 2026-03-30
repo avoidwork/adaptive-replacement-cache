@@ -12,11 +12,12 @@ The `adaptive-replacement-cache` library implements the Adaptive Replacement Cac
 classDiagram
     class ARC {
         -#size: number
+        -#p: number
         +cache: Map
-        +b1: Map
-        +b2: Map
         +t1: Map
         +t2: Map
+        +b1: Map
+        +b2: Map
         +constructor(size)
         +get(key)
         +set(key, value)
@@ -25,12 +26,12 @@ classDiagram
         +clear()
         +size: number
         +maxSize: number
+        +p: number
         +keys()
         +values()
         +entries()
         +forEach(callback)
         +toJSON()
-        +adjust()
     }
 
     class CacheEntry {
@@ -43,19 +44,41 @@ classDiagram
 
 ### Internal Data Structures
 
-The ARC implementation maintains 5 maps:
+The ARC implementation maintains 5 data structures:
 
 | Map | Purpose | Contents |
 |-----|---------|----------|
 | `cache` | Main storage | All cached key-value pairs |
-| `b1` | Recently accessed (transient) | Keys accessed once, recently |
-| `b2` | Frequently accessed (stable) | Keys accessed multiple times |
-| `t1` | Recently evicted (transient) | Keys evicted from b1 |
-| `t2` | Frequently evicted (stable) | Keys evicted from b2 |
+| `t1` | Recently accessed (L1) | Keys accessed once, recently (transient) |
+| `t2` | Frequently accessed (L2) | Keys accessed multiple times (stable) |
+| `b1` | Ghost list for T1 | Keys evicted from T1 (metadata only) |
+| `b2` | Ghost list for T2 | Keys evicted from T2 (metadata only) |
+
+**Notation:**
+- **T1/B1** (L1): Track recently accessed entries
+- **T2/B2** (L2): Track frequently accessed entries
+- **p**: Boundary parameter controlling the target size of T1 (with T2 size = maxSize - p)
+
+**Combined directory visualization:**
+```
+... [   B1  <-[     T1    <->      T2   ]->  B2   ] ...
+      [ . . . . [ . . . . . . ! . .^. . . . ] . . . . ]
+                [   fixed cache size (c)    ]
+```
+
+Where:
+- `!` = actual cache boundary
+- `^` = target size for T1 (controlled by `#p`)
 
 ## Data Flow
 
 ### Retrieval Flow get
+
+When a key is retrieved:
+
+1. If not in cache → return `undefined`
+2. If in `t1` → move to `t2`
+3. If in `t2` → keep in `t2` (refreshed at end)
 
 ```mermaid
 sequenceDiagram
@@ -68,14 +91,8 @@ sequenceDiagram
         Cache-->>Client: undefined
     else Found
         Cache->>Cache: Check which list
-        alt In b1
-            Cache->>Cache: Move to b2
-            Cache->>Cache: Call adjust
-        else In b2
-            Cache->>Cache: Keep in b2
-        else In t1
+        alt In t1
             Cache->>Cache: Move to t2
-            Cache->>Cache: Call adjust
         else In t2
             Cache->>Cache: Keep in t2
         end
@@ -84,6 +101,16 @@ sequenceDiagram
 ```
 
 ### Insertion Flow set
+
+When a new key is inserted:
+
+1. If key exists → update value and call `get`
+2. If key in `b1` (ghost hit) → increase `#p`, evict from `t2` to `b2`, add to `t1`
+3. If key in `b2` (ghost hit) → decrease `#p`, evict from `t1` to `b1`, add to `t2`
+4. If cache full → evict until space available:
+   - If `t1.size > 0` and condition met → evict `t2` to `b2`
+   - Otherwise → evict `t1` to `b1`
+5. Add key to `cache` and `t1`
 
 ```mermaid
 sequenceDiagram
@@ -97,139 +124,158 @@ sequenceDiagram
         Cache->>Cache: Call get to update position
         Cache-->>Client: Done
     else Key New
-        Cache->>Cache: Check cache.size >= maxSize
-        loop While over capacity
-            Cache->>Cache: Find oldest key
-            Cache->>Cache: Remove from all lists
-            Cache->>Cache: Delete from cache
+        alt In b1 (ghost hit)
+            Cache->>Cache: Increase #p
+            Cache->>Cache: Evict t2 to b2
+            Cache->>Cache: Add to t1
+        else In b2 (ghost hit)
+            Cache->>Cache: Decrease #p
+            Cache->>Cache: Evict t1 to b1
+            Cache->>Cache: Add to t2
+        else Normal miss
+            loop While cache full
+                Cache->>Cache: Evict from t1 or t2 to b1/b2
+                Cache->>Cache: Remove from cache
+            end
+            Cache->>Cache: Add to cache
+            Cache->>Cache: Add to t1
         end
-        Cache->>Cache: Add to cache
-        Cache->>Cache: Add to b1
-        Cache->>Cache: Call adjust
         Cache-->>Client: Done
     end
 ```
 
-## The adjust Method
+## The p Boundary
 
-The adjust method maintains balance between the four tracking lists based on access patterns.
+The `#p` parameter (exposed via `p` getter) controls the adaptive balance between recency and frequency:
 
-### Algorithm
+- **`#p` = target size for `t1`**
+- **`maxSize - #p` = target size for `t2`**
 
-1. Calculate `delta = max(b1.size - b2.size, 0) / 2`
-2. Calculate targetb1Size floor max maxSize delta div 2
-3. Move excess from b1 to t1 until b1 <= targetb1Size
-4. Calculate targetb2Size = maxSize - targetb1Size
-5. Move excess from b2 to t2 until b2 <= targetb2Size
+### Ghost Hit Behavior
 
-### Visual Representation
+According to the [ARC algorithm](https://en.wikipedia.org/wiki/Adaptive_replacement_cache):
 
-```mermaid
-flowchart TD
-    A[adjust called] --> B[Calculate delta]
-    B --> C[Calculate targetb1Size]
-    C --> D[Move from b1 to t1]
-    D --> E[Calculate targetb2Size]
-    E --> F[Move from b2 to t2]
-    F --> G[Balance achieved]
+- **B1 ghost hit** (entry re-entered that was evicted from T1):
+  - Increase T1 size: `#p += floor(|b2| / |b1|)`
+  - Evict from `t2` to `b2` to maintain capacity
+  
+- **B2 ghost hit** (entry re-entered that was evicted from T2):
+  - Decrease T1 size: `#p -= floor(|b1| / |b2|)`
+  - Evict from `t1` to `b1` to maintain capacity
 
-    subgraph Lists
-        b1[b1 transient recently accessed]
-        b2[b2 stable frequently accessed]
-        T1[t1 recently evicted]
-        T2[t2 frequently evicted]
-        C[cache all entries]
-        
-        b1 --> C
-        b2 --> C
-        T1 --> C
-        T2 --> C
-    end
+- **Cache miss** (new entry):
+  - Don't change `#p`
+  - Evict based on current balance
+
+### Example
+
+```javascript
+const cache = new ARC(10);
+// #p starts at 0
+// t1 size = 0, t2 size = 10
+
+cache.set('a', 1); // 'a' in t1
+// #p = 0, t1 = ['a'], t2 = []
+
+cache.set('b', 2); // 'b' in t1
+// t1 = ['a', 'b'], t2 = []
+
+cache.get('a'); // 'a' moves to t2
+// t1 = ['b'], t2 = ['a']
+
+// Continue adding until full...
+// Then evictions occur based on #p boundary
 ```
 
 ## Eviction Strategy
 
 When the cache is at capacity and a new item is inserted:
 
-1. **Loop while `cache.size >= maxSize`**:
-    - Try to evict from b1 first FIFO
-    - Then from t1
-    - Then from b2
-    - Then from t2
-2. Remove from all four lists ensures complete cleanup
+1. **Eviction order** (check while `cache.size >= maxSize`):
+   - Try `t2` first (if `t1.size > 0` and `#p >= maxSize` or `b1.size < b2.size`)
+   - Otherwise try `t1`
+2. Move evicted key from T-list to corresponding B-list
 3. Remove from main cache
 
 This ensures that:
-- Transient items are evicted first
-- Stable items are preserved longer
-- No stale references remain in any list
+- The adaptive boundary `#p` is respected
+- Ghost lists maintain eviction history
+- No stale references remain
 
 ## State Transitions
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Transient: set
-    Transient --> Stable: get
-    Stable --> Transient: adjust
-    Transient --> Evicted: eviction
-    Stable --> Evicted: eviction
-    Evicted --> Stable: adjust
+    [*] --> T1: set (new key)
+    T1 --> T2: get (on access)
+    T1 --> B1: eviction
+    T2 --> T2: get (on access)
+    T2 --> B2: eviction
+    B1 --> T1: set (ghost hit)
+    B2 --> T2: set (ghost hit)
+    T1 --> B1: set (ghost hit, #p adjustment)
+    T2 --> B2: set (ghost hit, #p adjustment)
 ```
 
 ### State Transition Table
 
-| Current State | Action | New State |
-|---------------|--------|-----------|
-| Not in cache | set | b1 transient |
-| b1 transient | get | b2 stable |
-| b2 stable | get | b2 stable moves to end |
-| t1 evicted | get | t2 evicted stable |
-| t2 evicted | get | t2 evicted stable moves to end |
-| Any | adjust | Balance lists based on access patterns |
-| Any | eviction | Removed from all lists and cache |
+| Current State | Action | New State | Notes |
+|---------------|--------|-----------|-------|
+| Not in cache | set | t1 | New entry enters T1 |
+| t1 | get | t2 | Re-access promotes to T2 |
+| t2 | get | t2 | Re-access refreshes position |
+| t1 | eviction | b1 | T1 eviction adds to ghost list |
+| t2 | eviction | b2 | T2 eviction adds to ghost list |
+| b1 | set | t1 | Ghost hit increases T1 size |
+| b2 | set | t2 | Ghost hit decreases T1 size |
+| Any | set (full) | eviction | Removes from T-list to B-list |
 
 ## Memory Management
 
 ### Cleanup on Delete
 
-When delete key is called:
+The `delete(key)` method handles ghost list entries:
 
 ```javascript
+// If key in cache
 this.cache.delete(key);
-this.b1.delete(key);
-this.b2.delete(key);
 this.t1.delete(key);
 this.t2.delete(key);
+this.b1.delete(key);
+this.b2.delete(key);
+
+// If key only in ghost lists (b1 or b2)
+// Adjust #p and evict opposite list to compensate
 ```
 
-All references are removed to prevent memory leaks and stale data.
+**Important:** The current implementation adjusts `#p` when deleting from ghost lists but performs naive removal. This can create an imbalance if multiple keys are deleted from B1 while B2 has grown.
 
 ### Clear Operation
 
-When clear is called all maps are cleared simultaneously:
+When `clear()` is called all maps are cleared simultaneously:
 
 ```javascript
 this.cache.clear();
-this.b1.clear();
-this.b2.clear();
 this.t1.clear();
 this.t2.clear();
+this.b1.clear();
+this.b2.clear();
 ```
 
 ## Performance Characteristics
 
 | Operation | Time Complexity | Notes |
 |-----------|-----------------|-------|
-| get | O1 | Map lookups are constant time |
-| set | On | May evict n items before insertion |
-| delete | O1 | Direct Map deletions |
-| has | O1 | Map lookup |
-| clear | O1 | Map.clear |
-| adjust | On | May move n items between lists |
+| get | O(1) | Map lookups are constant time |
+| set | O(n) | May evict n items before insertion |
+| delete | O(1) | Direct Map deletions (but may adjusting p) |
+| has | O(1) | Map lookup |
+| clear | O(1) | Map.clear |
+| size | O(1) | Map size property |
 
 ## Factory Function
 
-The arc factory provides a convenient way to create cache instances:
+The `arc` factory provides a convenient way to create cache instances:
 
 ```javascript
 export function arc(size = 50) {
@@ -246,22 +292,36 @@ export function arc(size = 50) {
 ### Why 5 Maps?
 
 - **cache**: Single source of truth for cached values
-- **b1/b2**: Distinguish between recently and frequently accessed
-- **t1/t2**: Track evicted items for adaptive behavior
+- **t1/t2**: Distinguish between recently (L1) and frequently (L2) accessed
+- **b1/b2**: Track evicted items for adaptive behavior (ghost lists)
 
-The b1/b2 and t1/t2 split allows ARC to adaptively determine whether to favor recency or frequency based on observed access patterns.
+The t1/t2 and b1/b2 split allows ARC to adaptively determine whether to favor recency or frequency based on observed access patterns.
+
+### Why Ghost Lists?
+
+Ghost lists act as "scorecards" tracking recent evictions. When you get a hit in a ghost list:
+- You know the entry was recently evicted
+- You can adjust the boundary to favor that access pattern
+- This makes ARC self-tuning without external configuration
 
 ### Why Evict All Lists?
 
-When evicting, all four lists are checked because:
-1. The adjust method may move items between lists
+When evicting, we check all lists because:
+1. The `#p` boundary may move items between lists
 2. A key might be in any list depending on access pattern
 3. Complete cleanup prevents memory leaks and stale references
 
-### Why Use Transient and Stable Lists?
+### Why UseTransient and Stable Lists?
 
 This design allows the cache to:
-- Quickly identify recently accessed items b1 and t1
-- Identify frequently accessed items b2 and t2
+- Quickly identify recently accessed items (t1 and b1)
+- Identify frequently accessed items (t2 and b2)
 - Make intelligent eviction decisions based on patterns
-- Maintain a hybrid of LRU recency and LFU frequency behavior
+- Maintain a hybrid of LRU (recency) and LFU (frequency) behavior
+
+### The p Boundary
+
+The `#p` parameter is the key innovation of ARC:
+- It automatically adjusts based on ghost hits
+- It controls the trade-off between T1 (recent) and T2 (frequent)
+- No manual tuning required - the algorithm adapts
