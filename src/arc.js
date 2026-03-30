@@ -31,10 +31,10 @@ export class ARC {
 
 		if (this.t1.has(key)) {
 			this.t1.delete(key);
-			this.t2.set(key, true);
+			this.t2.set(key, undefined);
 		} else if (this.t2.has(key)) {
 			this.t2.delete(key);
-			this.t2.set(key, true);
+			this.t2.set(key, undefined);
 		}
 
 		return this.cache.get(key);
@@ -60,9 +60,9 @@ export class ARC {
 			const delKey = this.t2.keys().next().value;
 			if (delKey !== undefined) {
 				this.t2.delete(delKey);
-				this.b2.set(delKey, true);
+				this.b2.set(delKey, undefined);
 			}
-			this.t1.set(key, true);
+			this.t1.set(key, undefined);
 			this.cache.set(key, value);
 			return;
 		}
@@ -72,9 +72,9 @@ export class ARC {
 			const delKey = this.t1.keys().next().value;
 			if (delKey !== undefined) {
 				this.t1.delete(delKey);
-				this.b1.set(delKey, true);
+				this.b1.set(delKey, undefined);
 			}
-			this.t2.set(key, true);
+			this.t2.set(key, undefined);
 			this.cache.set(key, value);
 			return;
 		}
@@ -82,21 +82,18 @@ export class ARC {
 		while (this.cache.size >= this.#size) {
 			let delKey;
 			let evicted;
-			if (
-				this.t1.size > 0 &&
-				(this.#p >= this.#size || (this.#p < this.#size && this.b1.size < this.b2.size))
-			) {
+			if (this.t1.size > 0 && this.b1.size < this.b2.size) {
 				delKey = this.t2.keys().next().value;
 				if (delKey !== undefined) {
 					this.t2.delete(delKey);
-					this.b2.set(delKey, true);
+					this.b2.set(delKey, undefined);
 					evicted = delKey;
 				}
 			} else {
 				delKey = this.t1.keys().next().value;
 				if (delKey !== undefined) {
 					this.t1.delete(delKey);
-					this.b1.set(delKey, true);
+					this.b1.set(delKey, undefined);
 					evicted = delKey;
 				}
 			}
@@ -106,7 +103,7 @@ export class ARC {
 		}
 
 		this.cache.set(key, value);
-		this.t1.set(key, true);
+		this.t1.set(key, undefined);
 	}
 
 	/**
@@ -128,7 +125,7 @@ export class ARC {
 			const delKey = this.t2.keys().next().value;
 			if (delKey !== undefined) {
 				this.t2.delete(delKey);
-				this.b2.set(delKey, true);
+				this.b2.set(delKey, undefined);
 			}
 			this.b1.delete(key);
 		} else if (this.b2.has(key)) {
@@ -139,7 +136,7 @@ export class ARC {
 			const delKey = this.t1.keys().next().value;
 			if (delKey !== undefined) {
 				this.t1.delete(delKey);
-				this.b1.set(delKey, true);
+				this.b1.set(delKey, undefined);
 			}
 			this.b2.delete(key);
 		}
