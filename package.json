@@ -1,5 +1,5 @@
 {
-  "name": "tiny-arc",
+  "name": "ar-cache",
   "version": "1.0.0",
   "description": "A lightweight ARC cache implementation for Node.js and browsers.",
   "homepage": "https://github.com/avoidwork/tiny-arc#readme",

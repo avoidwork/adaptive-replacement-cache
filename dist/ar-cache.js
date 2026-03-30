@@ -1,12 +1,10 @@
 /**
- * tiny-arc
+ * ar-cache
  *
  * @copyright 2026 Jason Mulligan <jason.mulligan@avoidwork.com>
  * @license BSD-3-Clause
  * @version 1.0.0
  */
-'use strict';
-
 /**
  * ARC (Adaptive Replacement Cache) implementation
  * Dynamically adapts to access patterns to maximize hit rates
@@ -250,7 +248,4 @@ class ARC {
  */
 function arc(options = {}) {
 	return new ARC(options.size || 50);
-}
-
-exports.ARC = ARC;
-exports.arc = arc;
+}export{ARC,arc};
