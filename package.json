@@ -33,6 +33,10 @@
     "type": "git",
     "url": "git+https://github.com/avoidwork/tiny-arc.git"
   },
+  "homepage": "https://github.com/avoidwork/tiny-arc#readme",
+  "bugs": {
+    "url": "https://github.com/avoidwork/tiny-arc/issues"
+  },
   "license": "BSD-3-Clause",
   "type": "module",
   "main": "dist/tiny-arc.cjs",
