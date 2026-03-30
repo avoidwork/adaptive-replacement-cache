@@ -28,7 +28,6 @@
   "engines": {
     "node": ">=14"
   },
-  "engineStrict": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/avoidwork/tiny-arc.git"
