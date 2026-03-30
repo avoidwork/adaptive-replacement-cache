@@ -52,10 +52,6 @@ export class ARC {
 			return;
 		}
 
-		if (this.t1.has(key) || this.t2.has(key)) {
-			return;
-		}
-
 		if (this.b1.has(key)) {
 			if (this.b2.size > 0) {
 				this.#p = Math.min(this.#size, this.#p + Math.floor(this.b2.size / this.b1.size));
