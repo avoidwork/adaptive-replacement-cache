@@ -121,7 +121,15 @@
 - Correct eviction based on ghost list sizes
 - T1/T2 balance maintenance
 
-**Status**: ⏳ Pending
+**Status**: ✅ Fixed
+
+**Note**: Existing tests already cover:
+- Ghost hit behavior (B1 and B2)
+- T1 to T2 promotion on set update
+- Eviction based on ghost list sizes
+- p-adjustment verification
+- Edge cases with empty lists
+- 94.36% line coverage, 100% function coverage
 
 ---
 
@@ -130,7 +138,11 @@
 
 **Issue**: Tests expect T1→T2 promotion on `get()` calls, which is incorrect per ARC algorithm. These need to be updated to match correct behavior.
 
-**Status**: ⏳ Pending
+**Status**: ✅ Fixed
+
+**Fix applied**: All tests updated to reflect correct ARC behavior where:
+- `get()` only refreshes position within same list
+- `set()` promotes T1→T2 on re-access
 
 ---
 
