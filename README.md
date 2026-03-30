@@ -2,6 +2,8 @@
 
 [![npm version](https://badge.fury.io/js/tiny-arc.svg)](https://badge.fury.io/js/tiny-arc)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](LICENSE)
+[![Node.js Version](https://img.shields.io/node/v/tiny-arc.svg)](https://nodejs.org)
+[![npm downloads](https://img.shields.io/npm/dm/tiny-arc.svg)](https://www.npmjs.com/package/tiny-arc)
 
 A lightweight ARC cache implementation for Node.js and browsers.
 
@@ -52,6 +54,23 @@ console.log(cache.get('key'));
 ```
 
 ## API
+
+| Method | Description |
+|--------|-------------|
+| `new ARC(size)` | Create cache with max size |
+| `get(key)` | Retrieve value by key |
+| `set(key, value)` | Store value by key |
+| `delete(key)` | Remove key from cache |
+| `has(key)` | Check if key exists |
+| `clear()` | Remove all entries |
+| `keys()` | Iterator over keys |
+| `values()` | Iterator over values |
+| `entries()` | Iterator over [key, value] |
+| `forEach(callback)` | Iterate with callback |
+| `toJSON()` | Serialize to JSON |
+| `size` | Current entry count (readonly) |
+| `maxSize` | Maximum size (readonly) |
+| `arc(options)` | Factory function |
 
 See [docs/API.md](docs/API.md) for full API documentation.
 
