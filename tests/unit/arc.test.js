@@ -440,3 +440,32 @@ test("ARC class - B1 ghost hit with T2 entries covering t2.delete", () => {
 	// T2 should have 1 entry (one was deleted during B1 ghost hit)
 	assert.strictEqual(cache.t2.size, 1);
 });
+
+test("ARC class - B2 ghost hit with T1 entries covering t1.delete and b1.set", () => {
+	const cache = new ARC(4);
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
+	cache.set(records[2].id, records[2]);
+	cache.set(records[3].id, records[3]);
+	cache.get(records[0].id);
+	cache.get(records[1].id);
+	cache.set(records[4].id, records[4]);
+	cache.set(records[5].id, records[5]);
+
+	// Manually add to b2 to enable B2 ghost hit
+	cache.b2.set(records[6].id, true);
+
+	// Get t1 key before B2 ghost hit
+	const t1KeysBefore = [...cache.t1.keys()];
+
+	cache.delete(records[6].id);
+	cache.set(records[6].id, records[6]);
+
+	// T1 should have lost an entry (deleted by B2 ghost hit handler)
+	assert.strictEqual(cache.t1.size, t1KeysBefore.length - 1);
+
+	// The deleted key should now be in b1
+	const deletedKey = t1KeysBefore.find((k) => !cache.t1.has(k));
+	assert.ok(deletedKey !== undefined);
+	assert.ok(cache.b1.has(deletedKey));
+});
