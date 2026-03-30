@@ -318,3 +318,10 @@ test("ARC class - trigger T2 eviction path", () => {
 	cache.set("e", 5);
 	assert.strictEqual(cache.size, 4);
 });
+
+test("ARC class - p getter", () => {
+	const cache = new ARC(4);
+	assert.strictEqual(cache.p, 0);
+	cache.set("a", 1);
+	assert.strictEqual(cache.p, 0);
+});
