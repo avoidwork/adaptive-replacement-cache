@@ -16,9 +16,9 @@ class ARC {
 	#p;
 
 	/**
-	 * @param {number} [size=100] - Maximum cache size
+	 * @param {number} [size=50] - Maximum cache size
 	 */
-	constructor(size = 100) {
+	constructor(size = 50) {
 		this.#size = size;
 		this.#p = 0;
 		this.cache = new Map();
@@ -62,9 +62,10 @@ class ARC {
 		}
 
 		if (this.b1.has(key)) {
-			if (this.b2.size > 0) {
-				this.#p = Math.min(this.#size, this.#p + Math.floor(this.b2.size / this.b1.size));
-			}
+			this.#p = Math.min(
+				this.#size,
+				this.#p + Math.floor(this.b2.size / Math.max(1, this.b1.size)),
+			);
 			const delKey = this.t2.keys().next().value;
 			if (delKey !== undefined) {
 				this.t2.delete(delKey);
@@ -76,9 +77,7 @@ class ARC {
 		}
 
 		if (this.b2.has(key)) {
-			if (this.b1.size > 0) {
-				this.#p = Math.max(0, this.#p - Math.floor(this.b1.size / this.b2.size));
-			}
+			this.#p = Math.max(0, this.#p - Math.floor(this.b1.size / Math.max(1, this.b2.size)));
 			const delKey = this.t1.keys().next().value;
 			if (delKey !== undefined) {
 				this.t1.delete(delKey);
@@ -91,6 +90,7 @@ class ARC {
 
 		while (this.cache.size >= this.#size) {
 			let delKey;
+			let evicted;
 			if (
 				this.t1.size > 0 &&
 				(this.#p >= this.#size || (this.#p < this.#size && this.b1.size < this.b2.size))
@@ -99,21 +99,18 @@ class ARC {
 				if (delKey !== undefined) {
 					this.t2.delete(delKey);
 					this.b2.set(delKey, true);
+					evicted = delKey;
 				}
 			} else {
 				delKey = this.t1.keys().next().value;
 				if (delKey !== undefined) {
 					this.t1.delete(delKey);
 					this.b1.set(delKey, true);
+					evicted = delKey;
 				}
 			}
-			if (this.cache.size >= this.#size) {
-				const evicted = this.t1.keys().next().value ?? this.t2.keys().next().value;
-				if (evicted !== undefined) {
-					this.cache.delete(evicted);
-					this.b1.delete(evicted);
-					this.b2.delete(evicted);
-				}
+			if (evicted !== undefined && this.cache.has(evicted)) {
+				this.cache.delete(evicted);
 			}
 		}
 
@@ -126,13 +123,34 @@ class ARC {
 	 * @param {string|number} key - The key to delete
 	 */
 	delete(key) {
-		if (this.cache.has(key)) {
-			this.cache.delete(key);
-			this.t1.delete(key);
-			this.t2.delete(key);
-			this.b1.delete(key);
-			this.b2.delete(key);
+		if (!this.cache.has(key)) {
+			return;
 		}
+
+		if (this.b1.has(key)) {
+			this.#p = Math.max(0, this.#p - Math.floor(this.b2.size / Math.max(1, this.b1.size)));
+			const delKey = this.t2.keys().next().value;
+			if (delKey !== undefined) {
+				this.t2.delete(delKey);
+				this.b2.set(delKey, true);
+			}
+		} else if (this.b2.has(key)) {
+			this.#p = Math.min(
+				this.#size,
+				this.#p + Math.floor(this.b1.size / Math.max(1, this.b2.size)),
+			);
+			const delKey = this.t1.keys().next().value;
+			if (delKey !== undefined) {
+				this.t1.delete(delKey);
+				this.b1.set(delKey, true);
+			}
+		}
+
+		this.cache.delete(key);
+		this.t1.delete(key);
+		this.t2.delete(key);
+		this.b1.delete(key);
+		this.b2.delete(key);
 	}
 
 	/**
@@ -226,11 +244,11 @@ class ARC {
 /**
  * Factory function to create an ARC cache instance
  * @param {Object} [options={}] - Configuration options
- * @param {number} [options.size=100] - Maximum cache size
+ * @param {number} [options.size=50] - Maximum cache size
  * @returns {ARC} - New ARC cache instance
  */
 function arc(options = {}) {
-	return new ARC(options.size || 100);
+	return new ARC(options.size || 50);
 }
 
 exports.ARC = ARC;
