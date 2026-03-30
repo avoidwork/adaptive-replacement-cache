@@ -14,7 +14,17 @@
     "test": "npm run lint && node --test tests/**/*.test.js",
     "benchmarks": "node benchmarks/benchmarks.js"
   },
-  "keywords": [],
+  "keywords": [
+    "arc",
+    "cache",
+    "adaptive",
+    "replacement",
+    "node",
+    "browser",
+    "typescript",
+    "cjs",
+    "esm"
+  ],
   "author": "Jason Mulligan <jason.mulligan@avoidwork.com>",
   "repository": {
     "type": "git",
