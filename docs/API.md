@@ -177,18 +177,17 @@ console.log(cache.maxSize);
 
 ## Factory Function
 
-### arc()
+### arc(size)
 
-Factory function to create a new ARC cache instance with optional configuration.
+Factory function to create a new ARC cache instance.
 
 ```javascript
-const cache = arc({ size: 50 });
+const cache = arc(50);
 ```
 
 | Parameter | Type   | Default | Description              |
 |-----------|--------|---------|--------------------------|
-| options   | Object | {}      | Configuration options    |
-| options.size | number | 100  | Maximum cache size       |
+| size      | number | 50      | Maximum cache size       |
 
 | Return Type | Description            |
 |-------------|------------------------|
@@ -207,7 +206,7 @@ cache1.set('key', 'value');
 const value = cache1.get('key');
 
 // Using the factory
-const cache2 = arc({ size: 50 });
+const cache2 = arc(50);
 cache2.set('user', { id: 1, name: 'John' });
 ```
 

@@ -39,7 +39,7 @@ cache.set('key', 'value');
 console.log(cache.get('key'));
 
 // Factory function
-const cache2 = arc({ size: 100 });
+const cache2 = arc(100);
 ```
 
 ### CommonJS
@@ -47,7 +47,7 @@ const cache2 = arc({ size: 100 });
 ```js
 const { ARC, arc } = require('adaptive-replacement-cache');
 
-const cache = arc({ size: 100 });
+const cache = arc(100);
 cache.set('key', 'value');
 console.log(cache.get('key'));
 ```
@@ -69,7 +69,7 @@ console.log(cache.get('key'));
 | `toJSON()` | Serialize to JSON |
 | `size` | Current entry count (readonly) |
 | `maxSize` | Maximum size (readonly) |
-| `arc(options)` | Factory function |
+| `arc(size)` | Factory function |
 
 See [docs/API.md](docs/API.md) for full API documentation.
 

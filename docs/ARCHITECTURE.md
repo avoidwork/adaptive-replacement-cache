@@ -232,14 +232,14 @@ this.t2.clear();
 The arc factory provides a convenient way to create cache instances:
 
 ```javascript
-export function arc(options = {}) {
-  return new ARC(options.size || 100);
+export function arc(size = 50) {
+  return new ARC(size);
 }
 ```
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| size | number | 100 | Maximum cache size |
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| size | number | 50 | Maximum cache size |
 
 ## Design Decisions
 
