@@ -433,19 +433,21 @@ test("ARC class - B1 ghost hit with T2 entries covering t2.delete", () => {
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
 
-	// Evict 2 entries, records[2] and records[3] go to B1
+	// Evict 2 entries
+	// First eviction: |B1|=0, |B2|=0, default to T1, evict 2 to B1
 	cache.set(records[5].id, records[5]);
+	// Second eviction: |B1|=1, |B2|=0, |B1| >= |B2|, evict from T2, evict 0 to B2
 	cache.set(records[6].id, records[6]);
 
-	// T2 should have 2 entries (records[0], records[1])
-	assert.strictEqual(cache.t2.size, 2);
+	// T2 should have 1 entry (records[1], since records[0] was evicted)
+	assert.strictEqual(cache.t2.size, 1);
 
 	// B1 ghost hit on records[2] - this should delete from T2 (lines 62-63)
 	cache.delete(records[2].id);
 	cache.set(records[2].id, records[2]);
 
-	// T2 should have 1 entry (one was deleted during B1 ghost hit)
-	assert.strictEqual(cache.t2.size, 1);
+	// T2 should have 0 entries (the remaining one was deleted during B1 ghost hit)
+	assert.strictEqual(cache.t2.size, 0);
 });
 
 test("ARC class - B2 ghost hit with T1 entries covering t1.delete and b1.set", () => {

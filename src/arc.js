@@ -90,19 +90,45 @@ export class ARC {
 		while (this.cache.size >= this.#size) {
 			let delKey;
 			let evicted;
-			if (
-				this.t1.size > 0 &&
-				(this.#p >= this.#size || (this.#p < this.#size && this.b1.size < this.b2.size))
-			) {
-				delKey = this.t2.keys().next().value;
-				if (delKey !== undefined) {
+			// Per ARC: evict based on ghost list sizes to balance T1/T2
+			// If both ghost lists are empty, default to evicting from T1 (LRU behavior)
+			if (this.b1.size === 0 && this.b2.size === 0) {
+				// Initial state: evict from T1 (standard LRU)
+				if (this.t1.size > 0) {
+					delKey = this.t1.keys().next().value;
+					this.t1.delete(delKey);
+					this.b1.set(delKey, true);
+					evicted = delKey;
+				} else if (this.t2.size > 0) {
+					delKey = this.t2.keys().next().value;
+					this.t2.delete(delKey);
+					this.b2.set(delKey, true);
+					evicted = delKey;
+				}
+			} else if (this.b1.size < this.b2.size) {
+				// B2 is larger, meaning we've been evicting too many frequent entries
+				// Evict from T1 to make room for T2 to grow
+				if (this.t1.size > 0) {
+					delKey = this.t1.keys().next().value;
+					this.t1.delete(delKey);
+					this.b1.set(delKey, true);
+					evicted = delKey;
+				} else if (this.t2.size > 0) {
+					delKey = this.t2.keys().next().value;
 					this.t2.delete(delKey);
 					this.b2.set(delKey, true);
 					evicted = delKey;
 				}
 			} else {
-				delKey = this.t1.keys().next().value;
-				if (delKey !== undefined) {
+				// B1 >= B2, meaning we've been evicting too many recent entries
+				// Evict from T2 to make room for T1 to grow
+				if (this.t2.size > 0) {
+					delKey = this.t2.keys().next().value;
+					this.t2.delete(delKey);
+					this.b2.set(delKey, true);
+					evicted = delKey;
+				} else if (this.t1.size > 0) {
+					delKey = this.t1.keys().next().value;
 					this.t1.delete(delKey);
 					this.b1.set(delKey, true);
 					evicted = delKey;
@@ -110,6 +136,10 @@ export class ARC {
 			}
 			if (evicted !== undefined && this.cache.has(evicted)) {
 				this.cache.delete(evicted);
+			}
+			// Safety: if no keys could be evicted, break to avoid infinite loop
+			if (evicted === undefined) {
+				break;
 			}
 		}
 

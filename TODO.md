@@ -25,15 +25,19 @@
 ---
 
 ### 2. [HIGH] Cache miss eviction logic is inverted
-**Location**: `src/arc.js:85-102`
+**Location**: `src/arc.js:90-125`
 
 **Issue**: The eviction condition uses `p` value incorrectly. According to ARC:
-- If `|B1| >= |B2|`: evict from T1 (recently used list is too small)
-- If `|B1| < |B2|`: evict from T2 (frequently used list is too small)
+- If `|B1| < |B2|`: evict from T1 (frequent list is losing more, grow recent list)
+- If `|B1| >= |B2|`: evict from T2 (recent list is losing more, grow frequent list)
+- If both ghost lists empty: default to T1 (LRU behavior)
 
-Current implementation uses `this.#p >= this.#size` which makes no sense.
+**Status**: ✅ Fixed
 
-**Status**: ⏳ Pending
+**Fix applied**:
+- Eviction now based on comparing ghost list sizes |B1| vs |B2|
+- Added fallback when preferred list is empty
+- Added safety break to prevent infinite loop
 
 ---
 
