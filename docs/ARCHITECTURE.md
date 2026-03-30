@@ -1,5 +1,39 @@
 # ARC Architecture and Data Flow
 
+<!-- toc -->
+
+- [Overview](#overview)
+- [Architecture](#architecture)
+  - [Core Components](#core-components)
+  - [Internal Data Structures](#internal-data-structures)
+- [Data Flow](#data-flow)
+  - [Retrieval Flow get](#retrieval-flow-get)
+  - [Insertion Flow set](#insertion-flow-set)
+- [The p Boundary](#the-p-boundary)
+- [Eviction Strategy](#eviction-strategy)
+- [State Transitions](#state-transitions)
+  - [State Transition Table](#state-transition-table)
+- [Memory Management](#memory-management)
+  - [Cleanup on Delete](#cleanup-on-delete)
+  - [Clear Operation](#clear-operation)
+- [Performance Characteristics](#performance-characteristics)
+- [Factory Function](#factory-function)
+- [Design Decisions](#design-decisions)
+  - [Why 5 Maps?](#why-5-maps)
+  - [Why Ghost Lists?](#why-ghost-lists)
+  - [Why Evict All Lists?](#why-evict-all-lists)
+  - [Why Use Transient and Stable Lists?](#why-use-transient-and-stable-lists)
+  - [The p Boundary](#the-p-boundary-1)
+- [Mathematical Foundation](#mathematical-foundation)
+  - [Notation](#notation)
+  - [Ghost Hit Adjustments](#ghost-hit-adjustments)
+  - [Eviction Logic](#eviction-logic)
+  - [Size Constraints](#size-constraints)
+  - [Visual Representation](#visual-representation)
+  - [Proof of Adaptive Behavior](#proof-of-adaptive-behavior)
+
+<!-- tocstop -->
+
 ## Overview
 
 The `adaptive-replacement-cache` library implements the Adaptive Replacement Cache (ARC) algorithm, which adaptively balances between recently accessed and frequently accessed items to maximize cache hit rates.
