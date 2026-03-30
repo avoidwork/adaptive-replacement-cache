@@ -1,8 +1,8 @@
 # Adaptive Replacement Cache
 
-[![npm version](https://badge.fury.io/js/tiny-arc.svg)](https://badge.fury.io/js/tiny-arc)
+[![npm version](https://badge.fury.io/js/ar-cache.svg)](https://badge.fury.io/js/ar-cache)
 [![License: BSD-3-Clause](https://img.shields.io/badge/License-BSD--3--Clause-blue.svg)](LICENSE)
-[![npm downloads](https://img.shields.io/npm/dm/tiny-arc.svg)](https://www.npmjs.com/package/tiny-arc)
+[![npm downloads](https://img.shields.io/npm/dm/ar-cache.svg)](https://www.npmjs.com/package/ar-cache)
 
 A lightweight ARC cache implementation for Node.js and browsers.
 
@@ -17,13 +17,13 @@ A lightweight ARC cache implementation for Node.js and browsers.
 
 ```bash
 # npm
-npm install tiny-arc
+npm install ar-cache
 
 # pnpm
-pnpm add tiny-arc
+pnpm add ar-cache
 
 # yarn
-yarn add tiny-arc
+yarn add ar-cache
 ```
 
 ## Usage
@@ -31,7 +31,7 @@ yarn add tiny-arc
 ### ES Modules
 
 ```js
-import { ARC, arc } from 'tiny-arc';
+import { ARC, arc } from 'ar-cache';
 
 // Direct class usage
 const cache = new ARC(100);
@@ -45,7 +45,7 @@ const cache2 = arc({ size: 100 });
 ### CommonJS
 
 ```js
-const { ARC, arc } = require('tiny-arc');
+const { ARC, arc } = require('ar-cache');
 
 const cache = arc({ size: 100 });
 cache.set('key', 'value');

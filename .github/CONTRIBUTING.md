@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in contributing to tiny-arc! Please read these guidelines before submitting a pull request.
+Thank you for your interest in contributing to ar-cache! Please read these guidelines before submitting a pull request.
 
 ## Getting Started
 
