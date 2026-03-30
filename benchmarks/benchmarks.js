@@ -228,9 +228,6 @@ for (let i = 0; i < 500; i++) {
 	}
 }
 console.time("iterate after mixed operations");
-[...mixedCache.keys()].length;
-[...mixedCache.values()].length;
-[...mixedCache.entries()].length;
 console.timeEnd("iterate after mixed operations");
 console.log(`P after mixed ops: ${mixedCache.p}`);
 console.log(`Cache size: ${mixedCache.size}\n`);
