@@ -14,9 +14,13 @@
 
 **Issue**: The `get()` method moves entries from T1→T2 on every access. According to ARC, entries only move from T1→T2 when they are *re-accessed via `set()`*, not on every `get()`. This breaks the "recently used" (T1) vs "frequently used" (T2) distinction.
 
-**Expected behavior**: `get()` should only return the value. T1→T2 promotion happens in `set()` when the key already exists in cache.
+**Expected behavior**: `get()` should only return the value and refresh LRU position within the same list. T1→T2 promotion happens in `set()` when the key already exists in cache.
 
-**Status**: ⏳ Pending
+**Status**: ✅ Fixed
+
+**Fix applied**:
+- `get()` now only refreshes position within the same list (T1→T1 or T2→T2)
+- `set()` promotes T1→T2 when updating an existing key
 
 ---
 

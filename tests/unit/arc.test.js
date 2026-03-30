@@ -195,18 +195,19 @@ test(" ARC class - adjust boundary", () => {
 	assert.strictEqual(cache.size, 6);
 });
 
-test("ARC class - T1 to T2 promotion", () => {
+test("ARC class - T1 to T2 promotion on set update", () => {
 	const cache = new ARC(50);
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
 	cache.set(records[2].id, records[2]);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
+	// Update via set() promotes T1->T2
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
 	assert.strictEqual(cache.t2.has(records[0].id), true);
 	assert.strictEqual(cache.t2.has(records[1].id), true);
 });
 
-test("ARC class - T2 promotion on multiple hits", () => {
+test("ARC class - get() maintains LRU order within T1", () => {
 	const cache = new ARC(50);
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
@@ -214,8 +215,9 @@ test("ARC class - T2 promotion on multiple hits", () => {
 	cache.get(records[1].id);
 	cache.get(records[0].id);
 	cache.get(records[1].id);
-	assert.strictEqual(cache.t2.has(records[0].id), true);
-	assert.strictEqual(cache.t2.has(records[1].id), true);
+	// get() should NOT promote T1->T2, entries stay in T1
+	assert.strictEqual(cache.t1.has(records[0].id), true);
+	assert.strictEqual(cache.t1.has(records[1].id), true);
 });
 
 test("ARC class - cache at capacity eviction", () => {
@@ -256,13 +258,14 @@ test("ARC class - B1 ghost hit after multiple evictions", () => {
 	assert.strictEqual(cache.get(records[0].id), updatedRecord);
 });
 
-test("ARC class - get t1 to t2 promotion path", () => {
+test("ARC class - get() maintains LRU order within list", () => {
 	const cache = new ARC(50);
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
 	cache.get(records[0].id);
-	assert.strictEqual(cache.t1.has(records[0].id), false);
-	assert.strictEqual(cache.t2.has(records[0].id), true);
+	// get() should not promote T1->T2, just refresh position within T1
+	assert.strictEqual(cache.t1.has(records[0].id), true);
+	assert.strictEqual(cache.t2.has(records[0].id), false);
 });
 
 test("ARC class - adjust t1 boundary", () => {
@@ -279,12 +282,14 @@ test("ARC class - adjust t1 boundary", () => {
 	assert.strictEqual(cache.size, 5);
 });
 
-test("ARC class - T2 promotion on multiple hits", () => {
+test("ARC class - T2 refresh on multiple gets", () => {
 	const cache = new ARC(50);
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
+	// First update promotes to T2
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
+	// Subsequent gets just refresh position in T2
 	cache.get(records[0].id);
 	cache.get(records[1].id);
 	assert.strictEqual(cache.t2.has(records[0].id), true);
@@ -320,10 +325,9 @@ test("ARC class - B1 ghost hit with B2 populated", () => {
 	const cache = new ARC(4);
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
+	// Update via set() promotes to T2
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
 	cache.set(records[2].id, records[2]);
 	cache.set(records[3].id, records[3]);
 	cache.set(records[4].id, records[4]);
@@ -376,10 +380,9 @@ test("ARC class - T2 promotion and eviction", () => {
 	const cache = new ARC(4);
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
+	// Update via set() promotes to T2
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
 	assert.strictEqual(cache.t2.has(records[0].id), true);
 	assert.strictEqual(cache.t2.has(records[1].id), true);
 	cache.set(records[2].id, records[2]);
@@ -392,10 +395,9 @@ test("ARC class - B1 ghost hit with t2 entries", () => {
 	const cache = new ARC(4);
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
+	// Update via set() promotes to T2
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
 	cache.delete(records[0].id);
 	cache.set(records[2].id, records[2]);
 	cache.set(records[3].id, records[3]);
@@ -408,10 +410,9 @@ test("ARC class - B2 ghost hit with t1 entries", () => {
 	const cache = new ARC(4);
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
+	// Update via set() promotes to T2
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
 	cache.delete(records[1].id);
 	cache.set(records[2].id, records[2]);
 	cache.set(records[3].id, records[3]);
@@ -428,11 +429,9 @@ test("ARC class - B1 ghost hit with T2 entries covering t2.delete", () => {
 	cache.set(records[3].id, records[3]);
 	cache.set(records[4].id, records[4]);
 
-	// Promote records[0] and records[1] to T2
-	cache.get(records[0].id);
-	cache.get(records[1].id);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
+	// Promote records[0] and records[1] to T2 via set()
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
 
 	// Evict 2 entries, records[2] and records[3] go to B1
 	cache.set(records[5].id, records[5]);
@@ -482,10 +481,9 @@ test("ARC class - B1 ghost hit via set with T2 eviction", () => {
 	const cache = new ARC(4);
 	cache.set(records[0].id, records[0]);
 	cache.set(records[1].id, records[1]);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
+	// Promote to T2 via set()
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
 	cache.set(records[2].id, records[2]);
 	cache.set(records[3].id, records[3]);
 	cache.set(records[4].id, records[4]);
@@ -508,10 +506,9 @@ test("ARC class - B2 ghost hit via set with T1 eviction", () => {
 	cache.set(records[1].id, records[1]);
 	cache.set(records[2].id, records[2]);
 	cache.set(records[3].id, records[3]);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
-	cache.get(records[0].id);
-	cache.get(records[1].id);
+	// Promote to T2 via set()
+	cache.set(records[0].id, records[0]);
+	cache.set(records[1].id, records[1]);
 
 	// Manually add to b2 to simulate B2 ghost
 	cache.b2.set(records[4].id, true);

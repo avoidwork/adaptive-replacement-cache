@@ -29,9 +29,10 @@ export class ARC {
 			return undefined;
 		}
 
+		// Move to back of respective list to maintain LRU order within the list
 		if (this.t1.has(key)) {
 			this.t1.delete(key);
-			this.t2.set(key, true);
+			this.t1.set(key, true);
 		} else if (this.t2.has(key)) {
 			this.t2.delete(key);
 			this.t2.set(key, true);
@@ -48,7 +49,14 @@ export class ARC {
 	set(key, value) {
 		if (this.cache.has(key)) {
 			this.cache.set(key, value);
-			this.get(key);
+			// Promote T1->T2 on re-access (update), refresh T2 position
+			if (this.t1.has(key)) {
+				this.t1.delete(key);
+				this.t2.set(key, true);
+			} else if (this.t2.has(key)) {
+				this.t2.delete(key);
+				this.t2.set(key, true);
+			}
 			return;
 		}
 
