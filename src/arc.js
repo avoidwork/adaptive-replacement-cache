@@ -137,6 +137,7 @@ export class ARC {
 			if (evicted !== undefined && this.cache.has(evicted)) {
 				this.cache.delete(evicted);
 			}
+			/* node:coverage ignore next 4 */
 			// Safety: if no keys could be evicted, break to avoid infinite loop
 			if (evicted === undefined) {
 				break;
