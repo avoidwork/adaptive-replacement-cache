@@ -6,11 +6,20 @@
 - [Architecture](#architecture)
   - [Core Components](#core-components)
   - [Internal Data Structures](#internal-data-structures)
+- [Mathematical Foundation](#mathematical-foundation)
+  - [Notation](#notation)
+  - [Ghost Hit Adjustments](#ghost-hit-adjustments)
+  - [Eviction Logic](#eviction-logic)
+  - [Size Constraints](#size-constraints)
+  - [Visual Representation](#visual-representation)
+  - [Proof of Adaptive Behavior](#proof-of-adaptive-behavior)
+- [The p Boundary](#the-p-boundary)
+  - [Ghost Hit Behavior](#ghost-hit-behavior)
+  - [Example](#example)
+- [Eviction Strategy](#eviction-strategy)
 - [Data Flow](#data-flow)
   - [Retrieval Flow get](#retrieval-flow-get)
   - [Insertion Flow set](#insertion-flow-set)
-- [The p Boundary](#the-p-boundary)
-- [Eviction Strategy](#eviction-strategy)
 - [State Transitions](#state-transitions)
   - [State Transition Table](#state-transition-table)
 - [Memory Management](#memory-management)
@@ -23,14 +32,6 @@
   - [Why Ghost Lists?](#why-ghost-lists)
   - [Why Evict All Lists?](#why-evict-all-lists)
   - [Why Use Transient and Stable Lists?](#why-use-transient-and-stable-lists)
-  - [The p Boundary](#the-p-boundary-1)
-- [Mathematical Foundation](#mathematical-foundation)
-  - [Notation](#notation)
-  - [Ghost Hit Adjustments](#ghost-hit-adjustments)
-  - [Eviction Logic](#eviction-logic)
-  - [Size Constraints](#size-constraints)
-  - [Visual Representation](#visual-representation)
-  - [Proof of Adaptive Behavior](#proof-of-adaptive-behavior)
 
 <!-- tocstop -->
 
@@ -352,13 +353,6 @@ This design allows the cache to:
 - Identify frequently accessed items (t2 and b2)
 - Make intelligent eviction decisions based on patterns
 - Maintain a hybrid of LRU (recency) and LFU (frequency) behavior
-
-### The p Boundary
-
-The `#p` parameter is the key innovation of ARC:
-- It automatically adjusts based on ghost hits
-- It controls the trade-off between T1 (recent) and T2 (frequent)
-- No manual tuning required - the algorithm adapts
 
 ## Mathematical Foundation
 
