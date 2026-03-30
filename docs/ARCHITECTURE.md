@@ -139,7 +139,7 @@ This decreases T1 size because the re-accessed entry was from the frequent list,
 
 When evicting from T1 or T2, the algorithm uses this comparison:
 
-$$\text{evict from T2 if: } |T1| > 0 \land (p \ge C \lor (p < C \land |B1| < |B2|))$$
+$$\text{evict from T2 if: } |T1| > 0 \land |B1| < |B2|$$
 
 Otherwise evict from T1.
 
@@ -295,8 +295,8 @@ cache.get('a'); // 'a' moves to t2
 When the cache is at capacity and a new item is inserted:
 
 1. **Eviction order** (check while `cache.size >= maxSize`):
-   - Try `t2` first (if `t1.size > 0` and `#p >= maxSize` or `b1.size < b2.size`)
-   - Otherwise try `t1`
+    - Try `t2` first (if `t1.size > 0` and `b1.size < b2.size`)
+    - Otherwise try `t1`
 2. Move evicted key from T-list to corresponding B-list
 3. Remove from main cache
 
